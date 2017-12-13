@@ -27,13 +27,9 @@
  * 7. 储存操作（cookie）
 */
 
-window.onload = function () {
-}
-
 const { log } = console
 let Operate = {
   start,
-  pause,
   stop,
   revoke,
   rename
@@ -87,11 +83,6 @@ function start() {
   addDrawPolygon()
 }
 
-// todo: 暂停
-function pause() {
-
-}
-
 // 撤回
 function revoke() {
   if (Polygons.length < 1) {
@@ -115,7 +106,7 @@ function revoke() {
 }
 
 // 重命名
-function rename(){
+function rename() {
   
 }
 
@@ -124,14 +115,11 @@ function stop() {
 
   if (DrawEnd) {
     alert('已经完成了，别点了。崩溃了就白描了')
-    return
   }
 
   // 改变图层关系，让map在pointsContent上面
   changeZIndex('map')
 
-  // 修改按钮文字
-  $('#startDraw').text('开始绘制')
   removeDrawPolygon()
 
   log(AllPolygon)
@@ -142,6 +130,12 @@ function addDrawPolygon() {
   // 给画布添加全局点击事件并且修改鼠标样式
   ContinueDraw ? DoorNum = SelectedDoorNum : DoorNum = prompt("请你即将编辑的门牌号 :", "")
 
+  if (DoorNum === null) {
+    alert('用户取消')
+    $('#startDraw').text('开始绘制')
+    DrawEnd = true 
+    return
+  }
   $('#pointsContent')
     .on('click', function (e) {
       const { offsetX, offsetY } = e
@@ -166,8 +160,6 @@ function removeDrawPolygon() {
   $(`.point`).hide()
 
   // 将数据放入全局数组中
-  log(DoorNum)
-
   AllPolygon[DoorNum] = Polygons
 
   // 重置操作  todo:整理成一个方法
@@ -179,6 +171,7 @@ function removeDrawPolygon() {
   polygonDom = {}
   DrawEnd = true
   ContinueDraw = false
+  $('#startDraw').text('开始绘制')
 }
 
 // 鼠标点击出现红点事件
