@@ -14,7 +14,7 @@
         </div>
 
         <!-- 点的集合 -->
-        <div id="pointsContent" :style="{ transform: scaleStyle ,zIndex:zIndexTop }" @click="getClickPos">
+        <div id="pointsContent" :style="{ transform: scaleStyle ,zIndex:zIndexTop }" :class="{ 'crosshair' : Drawing }" @click="getClickPos">
             <points ref="points" :AllPoints="AllPoints"></points>
         </div>
         <!-- 图形 -->
@@ -130,7 +130,6 @@
                 this.AllPolygons.push(this.Polygons)
                 this.CurrentPoints = []
                 this.Polygons = []
-                console.log(this.AllPolygons)
             },
 
             // 开始绘制
