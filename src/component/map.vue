@@ -51,11 +51,10 @@
     },
     methods: {
       ploygonEvent(e) {
-        console.log(e.target.dataset)
-        let { index , doorId}
-        this.$store.commit('setValue','choosedDoorId')
+        let { index, doorId } = e.target.dataset
+        this.$store.commit('setValue', 'choosedDoorId')
 
-        this.$store.commit('toggleChoosed',true)
+        this.$store.commit('toggleChoosed', true)
 
       },
       pushing(doorNum, points) {
