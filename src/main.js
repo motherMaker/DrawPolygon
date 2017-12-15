@@ -1,17 +1,18 @@
-import Vue from 'vue';
-import iView from 'iview';
-import VueRouter from 'vue-router';
-import Routers from './router';
+import Vue from 'vue'
+import Vuex from 'vuex'
+import iView from 'iview'
+import VueRouter from 'vue-router'
+import Routers from './router'
 
-import Util from './libs/util';
-import App from './app.vue';
-import '../theme/index.less';
-
-
-Vue.use(VueRouter);
+import Util from './libs/util'
+import App from './app.vue'
+import '../theme/index.less'
 
 
-Vue.use(iView);
+Vue.use(VueRouter)
+Vue.use(Vuex)
+
+Vue.use(iView)
 
 
 
@@ -19,24 +20,48 @@ Vue.use(iView);
 const RouterConfig = {
     mode: 'history',
     routes: Routers
-};
-const router = new VueRouter(RouterConfig);
+}
+const router = new VueRouter(RouterConfig)
 
 router.beforeEach((to, from, next) => {
-    iView.LoadingBar.start();
-    Util.title(to.meta.title);
-    next();
-});
+    iView.LoadingBar.start()
+    Util.title(to.meta.title)
+    next()
+})
 
 router.afterEach(() => {
-    iView.LoadingBar.finish();
-    window.scrollTo(0, 0);
-});
+    iView.LoadingBar.finish()
+    window.scrollTo(0, 0)
+})
+
+// vuex变量和方法
+const store = new Vuex.Store({
+    state: {
+        count: 0,
+        choosed: false,
+        choosedDoorId: 0,
+        editing: false
+    },
+    mutations: {
+        increment(state) {
+            state.count++
+        },
+        toggleChoosed(state, flag) {
+            state.choosed = flag
+        },
+
+        setValue(state, key, value) {
+            state[key] = value
+        }
+
+    }
+})
 
 
 
 new Vue({
     el: '#app',
-    router: router,
+    router,
+    store,
     render: h => h(App)
-});
+})
