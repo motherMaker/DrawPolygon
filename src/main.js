@@ -11,10 +11,7 @@ import '../theme/index.less'
 
 Vue.use(VueRouter)
 Vue.use(Vuex)
-
 Vue.use(iView)
-
-
 
 // 路由配置
 const RouterConfig = {
@@ -39,21 +36,25 @@ const store = new Vuex.Store({
     state: {
         count: 0,
         choosed: false,
-        choosedDoorId: 0,
-        editing: false
+        choosedDoorId: -1,
+        editing: false,
+        AllPolygons: {}
     },
     mutations: {
         increment(state) {
             state.count++
         },
-        toggleChoosed(state, flag) {
+        set_choosed(state, flag) {
             state.choosed = flag
         },
 
-        setValue(state, key, value) {
-            state[key] = value
-        }
+        set_choosedDoorId(state, doorId) {
+            state.choosedDoorId = doorId
+        },
 
+        set_AllPolygons(state, polygons) {
+            state.AllPolygons = polygons
+        }
     }
 })
 

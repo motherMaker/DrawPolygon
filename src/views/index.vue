@@ -106,7 +106,6 @@
                 this.$set(this.Polygons, this.CurrentPointIndex, offsetX)
                 this.$set(this.Polygons, this.CurrentPointIndex + 1, offsetY)
                 this.mouseClick({ offsetX, offsetY })
-                this.drawPolygon()
                 this.CurrentPointIndex += 2
             },
 
@@ -118,11 +117,10 @@
                 this.$set(this.AllPoints, this.DoorNum, this.CurrentPoints)
                 // 所有多边形点的对象
                 this.$set(this.AllPolygons, this.DoorNum, this.Polygons)
+                // 将对象保存到store中
+                this.$store.commit('set_AllPolygons', this.AllPolygons)
+                // 触发子界面的属性更新
                 this.$refs.mapcontent.pushing(this.DoorNum, this.Polygons)
-            },
-
-            // 根据点绘制多边形
-            drawPolygon() {
             },
 
             // 点击完成绘制之后的操作
@@ -166,6 +164,7 @@
                             on: {
                                 input: val => {
                                     that.DoorNum = val.replace(/\s+/g, "")
+                                    that.$store.commit('set_choosedDoorId', that.DoorNum)
                                 }
                             }
                         })
@@ -177,7 +176,13 @@
             stop() {
                 this.Drawing = false
                 this.endDrawing()
+            },
+
+            revoke(){
+                 let _id = this.$store.state.choosedDoorId
+                 
             }
+            
         }
     }
 </script>

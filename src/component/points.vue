@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-for="(item,index) in AllPoints" :data-index="index" v-show="Drawing">
+    <div v-for="(item,index) in AllPoints" :data-index="index" v-show="Drawing && choosedDoorId == index || choosed && choosedDoorId == index">
       <div v-for="(citem,index) in item" :data-cindex="index" class="point" v-bind:style="{ left: citem[0]-2+'px', top: citem[1]-2+'px' }">
       </div>
     </div>
@@ -24,12 +24,17 @@
       return {}
     },
     computed: {
+      choosed: function () {
+        return this.$store.state.choosed
+      },
+      choosedDoorId: function () {
+        return this.$store.state.choosedDoorId
+      },
       pointStyle: function () {
         return {
           transform: `scale(${1 / this.scale})`
         }
       },
-
       polygonChoosed() {
         return this.$store.state.choosed
       }

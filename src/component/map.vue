@@ -1,6 +1,7 @@
 <template>
   <div>
-    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" id="map" :style="{transform: scaleStyle,zIndex:Drawing? zIndexBottom: zIndexTop}">
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" id="map" :style="{transform: scaleStyle,zIndex:Drawing? zIndexBottom: zIndexTop}"
+      @click.self="test1">
       <polygon v-for="(item ,index) in cpolygon" :points="item" :data-index="index" :data-doorid="DoorNumArr[index]" :key="index"
         @click.self="ploygonEvent"></polygon>
     </svg>
@@ -41,6 +42,7 @@
       scaleStyle: function () {
         return `scale(${this.scale})`
       },
+      // 通过计算属性触发值改变
       cpolygon: function () {
         return this.PointsArr.map(function (i) {
           let _arr = []
@@ -51,15 +53,17 @@
     },
     methods: {
       ploygonEvent(e) {
-        let { index, doorId } = e.target.dataset
-        this.$store.commit('setValue', 'choosedDoorId')
-
-        this.$store.commit('toggleChoosed', true)
-
+        let { index, doorid } = e.target.dataset
+        this.$store.commit('set_choosed', true)
+        this.$store.commit('set_choosedDoorId', doorid)
       },
       pushing(doorNum, points) {
         this.$set(this.DoorNumArr, this.index, doorNum)
         this.$set(this.PointsArr, this.index, points)
+      },
+      test1() {
+        this.$store.commit('set_choosed', false)
+        this.$store.commit('set_choosedDoorId', -1)
       }
     }
   }
