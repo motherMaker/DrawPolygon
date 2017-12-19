@@ -1,7 +1,7 @@
 const routers = [{
     path: '/',
     meta: {
-        title: ''
+        title: '描点工具页面'
     },
     component: (resolve) => require(['./views/index.vue'], resolve)
 }];

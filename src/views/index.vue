@@ -7,9 +7,9 @@
                 <Button @click="scaleAll('add')" id="addImg">放大图片</Button>
                 <Button @click="scaleAll('reduce')" id="reduceImg">缩小图片</Button>
                 <Button @click="start()" id="startDraw" :disabled="Drawing">{{ Drawing? '绘制中':'开始绘制'}}</Button>
-                <Button @click="stop()" id="stopDraw">完成绘制</Button>
-                <Button @click="revoke()" id="revokeDraw">撤回</Button>
-                <Button @click="rename()" id="renameDraw">重命名</Button>
+                <Button @click="stop()" :disabled="!Drawing" id="stopDraw">完成绘制</Button>
+                <Button @click="revoke()" :disabled="showRevoke" id="revokeDraw">撤回</Button>
+                <Button @click="rename()" :disabled="showRevoke" id="renameDraw">重命名</Button>
             </Row>
         </div>
 
@@ -20,14 +20,14 @@
         </div>
 
         <!-- 图形 -->
-        <map-content ref="mapcontent" :scale="ScaleVariable" :Polygons="AllPolygons" :index="CurrentIndex" :Drawing="Drawing"></map-content>
+        <map-content ref="mapcontent" :scale="ScaleVariable" :Polygons="AllPolygons" :index="CurrentIndex" :Drawing="Drawing" @setDarwing="editing"></map-content>
 
     </div>
 </template>
 <script>
     import points from "../component/points"
     import MapContent from "../component/map"
-
+    import Util from '../libs/util'
     export default {
         components: {
             points,
@@ -46,7 +46,11 @@
                   * @param { CurrentIndex }            索引            当前多边形的索引
                   * @param { Polygons }                多边形点数据    当前多边形点的数据
                   * @param { AllPolygons }             所有多边形      所有多边形数据，最终需要的数据
+                  * @param { DoorNumCopy }             门牌号          编辑的门牌号，如果取消重置
                   * @param { DoorNum }                 门牌号          当前绘制的多边形的门牌号
+                  * @param { CurrentPointIndex }       点的索引        当前绘制的多边形点的索引
+                  * @param { RenameDoorNum }           重命名的门牌号   重命名之后的门牌号码         
+                  * @param { RenameNumCopy }           重命名的门牌号   编辑的重命名门牌号 ,备用        
                   */
                 ScaleVariable: 1,
                 Drawing: false,
@@ -57,13 +61,20 @@
                 CurrentIndex: 0,
                 Polygons: [],
                 AllPolygons: {},
-                DoorNum: null,
-                CurrentPointIndex: 0
+                DoorNum: -1,
+                DoorNumCopy: -1,
+                CurrentPointIndex: 0,
+                RenameDoorNum: -1,
+                RenameNumCopy: -1
             }
         },
         computed: {
             scaleStyle: function () {
                 return `scale(${this.ScaleVariable})`
+            },
+            // 新建多边形或者编辑多边形
+            showRevoke: function () {
+                return !(this.$store.state.choosed || (this.Drawing && this.DoorNum !== -1))
             }
         },
         methods: {
@@ -103,6 +114,7 @@
                     this.$Message.danger("2个点重合了，请重描")
                 }
                 // this.Polygons.push(offsetX, offsetY)
+
                 this.$set(this.Polygons, this.CurrentPointIndex, offsetX)
                 this.$set(this.Polygons, this.CurrentPointIndex + 1, offsetY)
                 this.mouseClick({ offsetX, offsetY })
@@ -119,22 +131,9 @@
                 this.$set(this.AllPolygons, this.DoorNum, this.Polygons)
                 // 将对象保存到store中
                 this.$store.commit('set_AllPolygons', this.AllPolygons)
-                // 触发子界面的属性更新
+                this.$store.commit('set_AllPoints', this.AllPoints)
+                // 触发 map 子界面的属性更新
                 this.$refs.mapcontent.pushing(this.DoorNum, this.Polygons)
-            },
-
-            // 点击完成绘制之后的操作
-            /**
-                     * 索引+1
-                     * 清空 CurrentPoints
-                    */
-            endDrawing() {
-                this.CurrentIndex += 1
-                this.CurrentPoints = []
-                this.Polygons = []
-                // this.AllPolygons = {}
-                this.DoorNum = null
-                this.CurrentPointIndex = 0
             },
 
             // 开始绘制
@@ -146,17 +145,22 @@
                         return
                     },
                     onOk: () => {
-                        if (this.DoorNum === null) {
+                        if (that.DoorNum === "" || that.DoorNum === -1) {
                             that.$Message.warning("不输入门牌号你是想咋样？")
                             return
                         }
+                        if (Util.IdExist(that.DoorNum, that.$store.state.AllPolygons)) {
+                            that.$Message.warning('已经存在此id,如果必须要一样的话，请在id前加下划线并且在最后保存的时候备注，谢谢！')
+                            return
+                        }
                         that.Drawing = true
+                        that.$store.commit('set_choosed', true)
                     },
                     title: "请输入门牌号：",
                     render: h => {
                         return h("Input", {
                             props: {
-                                value: that.DoorNum,
+                                value: "",
                                 autofocus: true,
                                 placeholder: "请输入门牌号...",
                                 maxlength: 15
@@ -175,14 +179,110 @@
             // 停止绘制
             stop() {
                 this.Drawing = false
+                this.$store.commit('set_choosed', false)
+                this.$store.commit('set_choosedDoorId', -1)
                 this.endDrawing()
             },
 
-            revoke(){
-                 let _id = this.$store.state.choosedDoorId
-                 
+            // 点击完成绘制之后的操作
+            endDrawing() {
+                this.CurrentIndex += 1
+                this.CurrentPoints = []
+                this.Polygons = []
+                this.DoorNum = -1
+                this.CurrentPointIndex = 0
+
+                console.log(this.$store.state.AllPolygons)
+            },
+
+            // 撤回
+            revoke() {
+                let { choosedDoorId, choosed } = this.$store.state
+                if (choosedDoorId !== -1 && choosed) {
+                    let _points = this.CurrentPoints
+                    let _polygons = this.Polygons
+                    _points.splice(_points.length - 1, 1)
+                    _polygons.splice(_polygons.length - 2, 2)
+                    this.CurrentPointIndex -= 2
+                    //设置值，所有的动态绑定已经在子界面中触发
+                    this.$set(this.AllPoints, this.DoorNum, this.CurrentPoints)
+                    this.$set(this.AllPolygons, this.DoorNum, this.Polygons)
+                    this.$refs.mapcontent.pushing(this.DoorNum, this.Polygons)
+                }
+            },
+
+            // 重命名
+            rename() {
+                let that = this
+                that.RenameNumCopy = -1
+                this.$Modal.confirm({
+                    onCancel: () => {
+                        that.$Message.warning("取消重命名！")
+                        that.stop()
+                        return
+                    },
+                    onOk: () => {
+                        if (that.RenameNumCopy === -1 || that.RenameNumCopy === "") {
+                            that.$Message.warning("不输入门牌号你是想咋样？")
+                            return
+                        }
+                        if (Util.IdExist(that.DoorNum, that.$store.state.AllPolygons)) {
+                            that.$Message.warning('已经存在此id,如果必须要一样的话，请在id前加下划线并且在最后保存的时候备注，谢谢！')
+                            return
+                        }
+                        this.renameWork()
+
+                    },
+                    title: `当前门牌号为:${that.DoorNum},请输入需要更换的门牌号,取消则不修改：`,
+                    render: h => {
+                        return h("Input", {
+                            props: {
+                                value: "",
+                                autofocus: true,
+                                placeholder: "请输入门牌号...",
+                                maxlength: 15
+                            },
+                            on: {
+                                input: val => {
+                                    that.RenameNumCopy = val.replace(/\s+/g, "")
+                                }
+                            }
+                        })
+                    }
+                })
+            },
+
+            // 最终验证完成之后进行重命名操作
+            renameWork() {
+                this.RenameDoorNum = this.RenameNumCopy
+                let _id = this.$store.state.choosedDoorId
+                // 修改当前门牌号
+                this.DoorNum = this.RenameDoorNum
+                // 删除之前的数据
+                delete this.AllPoints[_id]
+                delete this.AllPolygons[_id]
+                this.$store.commit('set_choosedDoorId', this.DoorNum)
+                this.$set(this.AllPoints, this.DoorNum, this.CurrentPoints)
+                this.$set(this.AllPolygons, this.DoorNum, this.Polygons)
+
+                this.$refs.mapcontent.pushing(this.DoorNum, this.Polygons)
+            },
+
+            // 选中编辑
+            editing() {
+                // 从store 中获取当前点和对象的数据
+                let { choosedDoorId, choosed } = this.$store.state
+                let _AllPolygons = this.$store.state.AllPolygons
+                let _allPoints = this.$store.state.AllPoints
+                this.Polygons = _AllPolygons[choosedDoorId]
+                this.CurrentPoints = _allPoints[choosedDoorId]
+                this.DoorNum = choosedDoorId
+                this.CurrentPointIndex = _AllPolygons[choosedDoorId].length
+                this.CurrentIndex = this.$store.state.CurrentIndex
+
+                // 继续绘制
+                this.Drawing = true
             }
-            
         }
     }
 </script>

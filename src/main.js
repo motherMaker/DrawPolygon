@@ -38,7 +38,9 @@ const store = new Vuex.Store({
         choosed: false,
         choosedDoorId: -1,
         editing: false,
-        AllPolygons: {}
+        AllPolygons: {},
+        AllPoints: {},
+        CurrentIndex: 0
     },
     mutations: {
         increment(state) {
@@ -47,14 +49,18 @@ const store = new Vuex.Store({
         set_choosed(state, flag) {
             state.choosed = flag
         },
-
         set_choosedDoorId(state, doorId) {
             state.choosedDoorId = doorId
         },
-
         set_AllPolygons(state, polygons) {
             state.AllPolygons = polygons
-        }
+        },
+        set_AllPoints(state, points) {
+            state.AllPoints = points
+        },
+        set_CurrentIndex(state, index) {
+            state.CurrentIndex = index
+        },
     }
 })
 

@@ -21,7 +21,6 @@
         default: {}
       },
       index: {
-        type: Number,
         default: 0
       },
       Drawing: {
@@ -56,8 +55,14 @@
         let { index, doorid } = e.target.dataset
         this.$store.commit('set_choosed', true)
         this.$store.commit('set_choosedDoorId', doorid)
+        this.$store.commit('set_CurrentIndex', index)
+        // 触发父组件编辑事件
+        this.$emit('setDarwing')
       },
-      pushing(doorNum, points) {
+      pushing(doorNum, points, rename = false) {
+        if(rename) {
+            
+        }
         this.$set(this.DoorNumArr, this.index, doorNum)
         this.$set(this.PointsArr, this.index, points)
       },
