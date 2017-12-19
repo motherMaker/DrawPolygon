@@ -15,7 +15,7 @@ Vue.use(iView)
 
 // 路由配置
 const RouterConfig = {
-    mode: 'history',
+    // mode: 'history',
     routes: Routers
 }
 const router = new VueRouter(RouterConfig)
