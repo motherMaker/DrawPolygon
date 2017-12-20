@@ -6,8 +6,9 @@
             <Row class="scale">
                 <Button @click="scaleAll('add')" id="addImg">放大图片</Button>
                 <Button @click="scaleAll('reduce')" id="reduceImg">缩小图片</Button>
-                <Button @click="start()" id="startDraw" :disabled="Drawing">{{ Drawing? '绘制中':'开始绘制'}}</Button>
-                <Button @click="stop()" :disabled="!Drawing" id="stopDraw">完成绘制</Button>
+                <Button v-if="!continueDrawing" @click="start()" id="startDraw" :disabled="Drawing">{{ Drawing? '绘制中':'开始绘制'}}</Button>
+                <Button v-if="continueDrawing" @click="Drawing=true;continueDrawing=false" id="continueDrawing">继续绘制</Button>
+                <Button @click="stop()" :disabled="!Drawing && !choosed" id="stopDraw">完成绘制</Button>
                 <Button @click="revoke()" :disabled="showRevoke" id="revokeDraw">撤回</Button>
                 <Button @click="rename()" :disabled="showRevoke" id="renameDraw">重命名</Button>
             </Row>
@@ -20,18 +21,32 @@
         </div>
 
         <!-- 图形 -->
-        <map-content ref="mapcontent" :scale="ScaleVariable" :Polygons="AllPolygons" :index="CurrentIndex" :Drawing="Drawing" @setDarwing="editing"></map-content>
+        <map-content ref="mapcontent" :scale="ScaleVariable" :Polygons="AllPolygons" :index="CurrentIndex" :Drawing="Drawing" @setDarwing="editing"
+            @resetStart="stop"></map-content>
 
+        <!-- 表格显示 -->
+        <div id="tableContent">
+            <table-content :datas="AllDatas"></table-content>
+        </div>
+
+        <!-- 选中之后微调点的位置 -->
+        <div id="movePoint">
+            <move-point></move-point>
+        </div>
     </div>
 </template>
 <script>
     import points from "../component/points"
     import MapContent from "../component/map"
+    import tableContent from "../component/table"
+    import movePoint from "../component/move"
     import Util from '../libs/util'
     export default {
         components: {
             points,
-            MapContent
+            MapContent,
+            tableContent,
+            movePoint
         },
         data() {
             return {
@@ -51,6 +66,8 @@
                   * @param { CurrentPointIndex }       点的索引        当前绘制的多边形点的索引
                   * @param { RenameDoorNum }           重命名的门牌号   重命名之后的门牌号码         
                   * @param { RenameNumCopy }           重命名的门牌号   编辑的重命名门牌号 ,备用        
+                  * @param { continueDrawing }         继续绘制标识     是否点击了多边形进行其他操作        
+                  * @param { AllDatas }                点和多边形       所有点和多边形的数组        
                   */
                 ScaleVariable: 1,
                 Drawing: false,
@@ -65,7 +82,9 @@
                 DoorNumCopy: -1,
                 CurrentPointIndex: 0,
                 RenameDoorNum: -1,
-                RenameNumCopy: -1
+                RenameNumCopy: -1,
+                continueDrawing: false,
+                AllDatas: []
             }
         },
         computed: {
@@ -75,6 +94,9 @@
             // 新建多边形或者编辑多边形
             showRevoke: function () {
                 return !(this.$store.state.choosed || (this.Drawing && this.DoorNum !== -1))
+            },
+            choosed: function () {
+                return this.$store.state.choosed
             }
         },
         methods: {
@@ -178,7 +200,17 @@
 
             // 停止绘制
             stop() {
+                // 保存数组形式的数据，格式化。以后会将所有的数据统一这种格式，容易遍历和查找替换等。
+                let _obj = new Object()
+                _obj.doorNum = this.DoorNum
+                _obj.points = this.CurrentPoints
+                _obj.polygons = this.Polygons
+                this.AllDatas.splice(this.CurrentIndex, 1)
+                this.AllDatas.push(_obj)
+                this.$store.commit('set_tableDatas', this.AllDatas)
+
                 this.Drawing = false
+                this.continueDrawing = false
                 this.$store.commit('set_choosed', false)
                 this.$store.commit('set_choosedDoorId', -1)
                 this.endDrawing()
@@ -191,8 +223,6 @@
                 this.Polygons = []
                 this.DoorNum = -1
                 this.CurrentPointIndex = 0
-
-                console.log(this.$store.state.AllPolygons)
             },
 
             // 撤回
@@ -226,7 +256,7 @@
                             that.$Message.warning("不输入门牌号你是想咋样？")
                             return
                         }
-                        if (Util.IdExist(that.DoorNum, that.$store.state.AllPolygons)) {
+                        if (Util.IdExist(that.RenameNumCopy, that.$store.state.AllPolygons)) {
                             that.$Message.warning('已经存在此id,如果必须要一样的话，请在id前加下划线并且在最后保存的时候备注，谢谢！')
                             return
                         }
@@ -261,6 +291,9 @@
                 // 删除之前的数据
                 delete this.AllPoints[_id]
                 delete this.AllPolygons[_id]
+
+                console.log(this.CurrentIndex)
+
                 this.$store.commit('set_choosedDoorId', this.DoorNum)
                 this.$set(this.AllPoints, this.DoorNum, this.CurrentPoints)
                 this.$set(this.AllPolygons, this.DoorNum, this.Polygons)
@@ -271,20 +304,17 @@
             // 选中编辑
             editing() {
                 // 从store 中获取当前点和对象的数据
-                let { choosedDoorId, choosed } = this.$store.state
+                let { choosedDoorId, choosed, CurrentIndex } = this.$store.state
                 let _AllPolygons = this.$store.state.AllPolygons
                 let _allPoints = this.$store.state.AllPoints
                 this.Polygons = _AllPolygons[choosedDoorId]
                 this.CurrentPoints = _allPoints[choosedDoorId]
                 this.DoorNum = choosedDoorId
                 this.CurrentPointIndex = _AllPolygons[choosedDoorId].length
-                this.CurrentIndex = this.$store.state.CurrentIndex
+                this.CurrentIndex = CurrentIndex
 
-                // 继续绘制
-                this.Drawing = true
+                this.continueDrawing = true
             }
         }
     }
 </script>
-<style scoped>
-</style>

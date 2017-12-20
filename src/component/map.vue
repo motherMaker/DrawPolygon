@@ -1,9 +1,9 @@
 <template>
   <div>
     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" id="map" :style="{transform: scaleStyle,zIndex:Drawing? zIndexBottom: zIndexTop}"
-      @click.self="test1">
+      @click.self="removeChooseState">
       <polygon v-for="(item ,index) in cpolygon" :points="item" :data-index="index" :data-doorid="DoorNumArr[index]" :key="index"
-        @click.self="ploygonEvent"></polygon>
+        @click.self="ploygonEvent" :class="DoorNumArr[index]==highLightDoorNum?'loopAnimate':''"></polygon>
     </svg>
   </div>
 </template>
@@ -41,6 +41,9 @@
       scaleStyle: function () {
         return `scale(${this.scale})`
       },
+      highLightDoorNum: function () {
+        return this.$store.state.highLightDoorNum
+      },
       // 通过计算属性触发值改变
       cpolygon: function () {
         return this.PointsArr.map(function (i) {
@@ -59,16 +62,14 @@
         // 触发父组件编辑事件
         this.$emit('setDarwing')
       },
-      pushing(doorNum, points, rename = false) {
-        if(rename) {
-            
-        }
+      pushing(doorNum, points) {
         this.$set(this.DoorNumArr, this.index, doorNum)
         this.$set(this.PointsArr, this.index, points)
       },
-      test1() {
+      removeChooseState() {
         this.$store.commit('set_choosed', false)
         this.$store.commit('set_choosedDoorId', -1)
+        this.$emit('resetStart')
       }
     }
   }

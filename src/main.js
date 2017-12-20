@@ -15,7 +15,7 @@ Vue.use(iView)
 
 // 路由配置
 const RouterConfig = {
-    // mode: 'history',
+    mode: 'history',
     routes: Routers
 }
 const router = new VueRouter(RouterConfig)
@@ -40,7 +40,9 @@ const store = new Vuex.Store({
         editing: false,
         AllPolygons: {},
         AllPoints: {},
-        CurrentIndex: 0
+        CurrentIndex: 0,
+        AllDatas: [],
+        highLightDoorNum: -1
     },
     mutations: {
         increment(state) {
@@ -61,6 +63,12 @@ const store = new Vuex.Store({
         set_CurrentIndex(state, index) {
             state.CurrentIndex = index
         },
+        set_tableDatas(state, obj) {
+            state.AllDatas = obj
+        },
+        set_highLightDoorNum(state, doorId) {
+            state.highLightDoorNum = doorId
+        }
     }
 })
 
