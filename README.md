@@ -44,4 +44,10 @@ npm run build
 
 <h5>2：npm run build 之后页面出现 404 。解决方案：将webpack.prod.config.js里面的 publicPath: '/dist/' 改成 './dist/',并且将路由设置成hash模式（mode为 'history'会找不到界面）,如果一定要用history模式,需要在每个路由之前添加自己的项目名</h5>
 
+<h3>欢迎随时联系：</h3>
+
+<h5>QQ:511431329</h5>
+
+<h5>邮箱: lwa950804@aliyun.com</h5>
+
 
