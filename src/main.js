@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import iView from 'iview'
 import VueRouter from 'vue-router'
 import Routers from './router'
+import VueClipboards from 'vue-clipboards'
 
 import Util from './libs/util'
 import App from './app.vue'
@@ -11,7 +12,8 @@ import '../theme/index.less'
 
 Vue.use(VueRouter)
 Vue.use(Vuex)
-Vue.use(iView)
+Vue.use(iView)           // UI组件库
+Vue.use(VueClipboards)   // 剪切板功能
 
 // 路由配置
 const RouterConfig = {

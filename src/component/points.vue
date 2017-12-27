@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-for="(item,index) in AllPoints" :data-index="index" v-show="Drawing && choosedDoorId == index || choosed && choosedDoorId == index">
-      <div v-for="(citem,index) in item" :data-cindex="index" class="point" v-bind:style="{ left: citem[0]-2+'px', top: citem[1]-2+'px' }">
+      <div v-for="(citem,index) in item" :data-cindex="index" class="point" v-bind:style="{ left: citem[0]-1+'px', top: citem[1]-1+'px' }">
       </div>
     </div>
   </div>

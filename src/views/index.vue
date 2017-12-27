@@ -1,37 +1,65 @@
 <template>
     <div class="index">
-        <img src="../resource/5f.jpg" alt="测试图" id="img" :style="{ transform: scaleStyle }">
-        <!-- 控制台 -->
-        <div id="floatConsole">
-            <Row class="scale">
-                <Button @click="scaleAll('add')" id="addImg">放大图片</Button>
-                <Button @click="scaleAll('reduce')" id="reduceImg">缩小图片</Button>
-                <Button v-if="!continueDrawing" @click="start()" id="startDraw" :disabled="Drawing">{{ Drawing? '绘制中':'开始绘制'}}</Button>
-                <Button v-if="continueDrawing" @click="Drawing=true;continueDrawing=false" id="continueDrawing">继续绘制</Button>
-                <Button @click="stop()" :disabled="!Drawing && !choosed" id="stopDraw">完成绘制</Button>
-                <Button @click="revoke()" :disabled="showRevoke" id="revokeDraw">撤回</Button>
-                <Button @click="rename()" :disabled="showRevoke" id="renameDraw">重命名</Button>
-            </Row>
+        <div id="sectionFloat">
+            <img src="../resource/jb_1f.jpg" alt="测试图" id="img" :style="{ transform: scaleStyle }">
+            <!-- 控制台 -->
+            <div id="floatConsole">
+                <Row class="scale">
+                    <Button @click="scaleAll('add')" id="addImg" type="primary">放大图片</Button>
+                    <Button @click="scaleAll('reduce')" id="reduceImg" type="primary">缩小图片</Button>
+                    </br>
+                    </br>
+                    <Button v-if="!continueDrawing" @click="start()" id="startDraw" :type="Drawing?'info':'success'" :disabled="Drawing">{{ Drawing? '绘制中':'开始绘制'}}</Button>
+                    <Button v-if="continueDrawing" @click="Drawing=true;continueDrawing=false" id="continueDrawing">继续绘制</Button>
+                    <Button @click="stop()" :disabled="!Drawing && !choosed" id="stopDraw" type="success">完成绘制</Button>
+                    <Button @click="revoke()" :disabled="showRevoke" id="revokeDraw" type="warning">撤回</Button>
+                    <Button @click="rename()" :disabled="showRevoke" id="renameDraw" type="warning">重命名</Button>
+                    </br>
+                    </br>
+
+                    <Button @click="showResult()" type="primary">生成结果</Button>
+                    <Button v-clipboard="ResultStr" type="primary">复制结果</Button>
+                    </br>
+                    </br>
+
+                    <Button @click="showTable = !showTable">{{ showTable ? '隐藏表格': '显示表格'}}</Button>
+                    <Button @click="showResultStr = !showResultStr">{{ showResultStr ? '隐藏结果文档': '显示结果文档'}}</Button>
+                    
+                </Row>
+            </div>
+
+            <!-- 点的集合 -->
+            <div id="pointsContent" :style="{ transform: scaleStyle ,zIndex:Drawing? zIndexTop:zIndexBottom }" :class="{ 'crosshair' : Drawing }"
+                @click="getClickPos">
+                <points ref="points" :AllPoints="AllPoints" :Drawing="Drawing"></points>
+            </div>
+
+            <!-- 图形 -->
+            <map-content ref="mapcontent" :scale="ScaleVariable" :Polygons="AllPolygons" :index="CurrentIndex" :Drawing="Drawing" @setDarwing="editing"
+                @resetStart="stop"></map-content>
         </div>
 
-        <!-- 点的集合 -->
-        <div id="pointsContent" :style="{ transform: scaleStyle ,zIndex:Drawing? zIndexTop:zIndexBottom }" :class="{ 'crosshair' : Drawing }"
-            @click="getClickPos">
-            <points ref="points" :AllPoints="AllPoints" :Drawing="Drawing"></points>
-        </div>
+        <div id="sectionStatic" v-show="showTable || showResultStr">
+            <!-- 表格显示 -->
+            <div id="tableContent" v-show="showTable">
+                <h1>表格</h1>
+                <table-content :datas="AllDatas"></table-content>
+            </div>
 
-        <!-- 图形 -->
-        <map-content ref="mapcontent" :scale="ScaleVariable" :Polygons="AllPolygons" :index="CurrentIndex" :Drawing="Drawing" @setDarwing="editing"
-            @resetStart="stop"></map-content>
-
-        <!-- 表格显示 -->
-        <div id="tableContent">
-            <table-content :datas="AllDatas"></table-content>
-        </div>
-
-        <!-- 选中之后微调点的位置 -->
-        <div id="movePoint">
+            <!-- 选中之后微调点的位置 -->
+            <!-- <div id="movePoint">
             <move-point></move-point>
+        </div> -->
+
+            <!-- 显示结果 -->
+            <div>
+
+                <div id="textarea" v-show="showResultStr">
+                    <h1>结果</h1>
+                    <Input v-model="ResultStr" type="textarea" :rows="4" placeholder="no result..."></Input>
+                </div>
+            </div>
+
         </div>
     </div>
 </template>
@@ -68,6 +96,9 @@
                   * @param { RenameNumCopy }           重命名的门牌号   编辑的重命名门牌号 ,备用        
                   * @param { continueDrawing }         继续绘制标识     是否点击了多边形进行其他操作        
                   * @param { AllDatas }                点和多边形       所有点和多边形的数组        
+                  * @param { ResultStr }               结果字符串       最后生成的结果的字符串        
+                  * @param { showTable }               显示表格         是否显示表格        
+                  * @param { showResultStr }           显示结果文档      是否显示结果文档        
                   */
                 ScaleVariable: 1,
                 Drawing: false,
@@ -84,7 +115,10 @@
                 RenameDoorNum: -1,
                 RenameNumCopy: -1,
                 continueDrawing: false,
-                AllDatas: []
+                AllDatas: [],
+                ResultStr: "",
+                showTable: false,
+                showResultStr: false
             }
         },
         computed: {
@@ -103,7 +137,7 @@
             // 缩放功能
             scaleAll(type) {
                 let that = this
-                if (type == "add" && that.ScaleVariable > 2) {
+                if (type == "add" && that.ScaleVariable > 4) {
                     this.$Message.warning("还放大,你怕是瞎了,换个人吧!")
                     return
                 }
@@ -202,12 +236,14 @@
             stop() {
                 // 保存数组形式的数据，格式化。以后会将所有的数据统一这种格式，容易遍历和查找替换等。
                 let _obj = new Object()
-                _obj.doorNum = this.DoorNum
-                _obj.points = this.CurrentPoints
-                _obj.polygons = this.Polygons
-                this.AllDatas.splice(this.CurrentIndex, 1)
-                this.AllDatas.push(_obj)
-                this.$store.commit('set_tableDatas', this.AllDatas)
+                if (this.DoorNum > 0) {
+                    _obj.doorNum = this.DoorNum
+                    _obj.points = this.CurrentPoints
+                    _obj.polygons = this.Polygons
+                    this.AllDatas.splice(this.CurrentIndex, 1)
+                    this.AllDatas.push(_obj)
+                    this.$store.commit('set_tableDatas', this.AllDatas)
+                }
 
                 this.Drawing = false
                 this.continueDrawing = false
@@ -314,6 +350,20 @@
                 this.CurrentIndex = CurrentIndex
 
                 this.continueDrawing = true
+            },
+
+            // 生成结果 目前生成csv文件
+            showResult() {
+                let res = this.AllPolygons
+                let str = ``
+                for (let key in res) {
+                    str += `"${key}":[${res[key]}],\n`
+                }
+
+                this.ResultStr = str
+
+                this.showResultStr = true
+                this.showTable = true
             }
         }
     }

@@ -33,7 +33,7 @@
   .point {
     width: 0;
     height: 0;
-    padding: 2px;
+    padding: 1px;
     border-radius: 50%;
     background-color: red;
   }
@@ -123,4 +123,23 @@
       opacity: 0
     }
   }
+
+  /* table */
+
+  #sectionStatic{
+    background: #eee;
+    width: 100%;
+    margin: 0 auto;
+    z-index: 300;
+    position: fixed;
+    bottom: 0;
+    padding: 50px;
+    left: 0;
+  }
+
+  #textarea,
+  #tableContent {
+    width: 100%;
+  }
+
 </style>
