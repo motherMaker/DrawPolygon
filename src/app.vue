@@ -38,14 +38,13 @@
     background-color: red;
   }
 
-  /* 控制按钮 */
+  /* 商场名 */
 
-  #floatConsole {
-    position: fixed;
-    top: 20px;
-    left: 30px;
-    z-index: 200;
+  .storeName {
+    width: 300px;
+    margin-bottom: 15px;
   }
+
 
   /* 被编辑的图片 */
 
@@ -126,7 +125,7 @@
 
   /* table */
 
-  #sectionStatic{
+  #sectionStatic {
     background: #eee;
     width: 100%;
     margin: 0 auto;
@@ -142,4 +141,32 @@
     width: 100%;
   }
 
+
+  /* 控制按钮 */
+
+  #floatConsole {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 200;
+  }
+
+  #floatConsole .transformConsole {
+    position: absolute;
+    cursor: pointer;
+    top: -4px;
+    left: -7px;
+    font-size: 18px;
+  }
+
+  /* 控制台效果样式 */
+
+  .colorful-stripe {
+    padding: 20px 30px;
+    position: absolute;
+    color: #fff;
+    border-radius: .5em;
+    background: linear-gradient(limegreen, transparent), linear-gradient(90deg, skyblue, transparent), linear-gradient(-90deg, coral, transparent);
+    background-blend-mode: screen;
+  }
 </style>

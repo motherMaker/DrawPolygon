@@ -60,12 +60,6 @@
             }
           }
         ],
-        AllDatas: this.$store.state.AllDatas
-      }
-    },
-    conputed: {
-      AllDatas1: function () {
-        return this.$store.state.AllDatas
       }
     },
     methods: {
@@ -73,6 +67,7 @@
         this.$store.commit('set_highLightDoorNum', params.row.doorNum)
       },
       remove(params) {
+        this.$emit('deleteStore', params.row.doorNum)
       }
     }
   }
