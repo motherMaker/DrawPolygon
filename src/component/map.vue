@@ -66,6 +66,16 @@
         this.$set(this.DoorNumArr, this.index, doorNum)
         this.$set(this.PointsArr, this.index, points)
       },
+
+      deletePoly(door) {
+        for (let i in this.DoorNumArr) {
+          if (this.DoorNumArr[i] == door) {
+            this.$delete(this.DoorNumArr, i)
+            this.$delete(this.PointsArr, i)
+            break
+          }
+        }
+      },
       removeChooseState() {
         this.$store.commit('set_choosed', false)
         this.$store.commit('set_choosedDoorId', -1)

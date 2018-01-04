@@ -38,6 +38,16 @@
     background-color: red;
   }
 
+  /* 门店门所在地的点样式 */
+
+  .pointBig {
+    width: 0;
+    height: 0;
+    padding: 3px;
+    border-radius: 50%;
+    background-color: red;
+  }
+
   /* 商场名 */
 
   .storeName {
@@ -45,13 +55,18 @@
     margin-bottom: 15px;
   }
 
-
   /* 被编辑的图片 */
 
   #img {
     width: 1920px;
     height: 1116px;
     z-index: 99;
+  }
+
+  .img-inputer {
+    margin: 30px auto 0;
+    display: block !important;
+    z-index: 300
   }
 
   /* 点的集合和画布 ,大小和图片保持一直，同时伸缩 */

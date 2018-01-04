@@ -1,7 +1,10 @@
 <template>
     <div class="index">
         <div id="sectionFloat">
-            <img src="../resource/jb_1f.jpg" alt="测试图" id="img" :style="{ transform: scaleStyle }">
+            <!-- <img v-if="Url" :src="Url" alt="测试图" id="img" :style="{ transform: scaleStyle }">
+            <VueImgInputer theme="light" size="large" @onChange="inputImg" v-if="!Url"></VueImgInputer> -->
+
+            <img src="../resource/jb_2f.jpg" alt="测试图" id="img" :style="{ transform: scaleStyle }">
             <!-- 控制台 -->
             <div id="floatConsole">
                 <transition name="fade">
@@ -24,25 +27,23 @@
                         </br>
                         <Button v-if="!continueDrawing" @click="start()" id="startDraw" :type="Drawing?'info':'success'" :disabled="Drawing">{{ Drawing? '绘制中':'开始绘制'}}</Button>
                         <Button v-if="continueDrawing" @click="Drawing=true;continueDrawing=false" id="continueDrawing">继续绘制</Button>
-                        <Button @click="stop()" :disabled="!Drawing && !choosed" id="stopDraw" type="success">完成绘制</Button>
-                        <Button @click="revoke()" :disabled="showRevoke" id="revokeDraw" type="warning">撤回</Button>
-                        <Button @click="rename()" :disabled="showRevoke" id="renameDraw" type="warning">重命名</Button>
+                        <Button @click="stop" :disabled="!Drawing && !choosed" id="stopDraw" type="success">完成绘制</Button>
+                        <Button @click="revoke" :disabled="showRevoke" id="revokeDraw" type="warning">撤回</Button>
+                        <Button @click="rename" :disabled="showRevoke" id="renameDraw" type="warning">重命名</Button>
                         </br>
                         </br>
-                        <Button @click="deletePolygon()" :disabled="!choosed" type="error">删除此多边形</Button>
+                        <Button @click="deletePolygon(true)" :disabled="!choosed" type="error">删除此多边形</Button>
                         </br>
                         </br>
-                        <Button @click="start(true)" type="primary">绘制最外围</Button>
+                        <Button @click="start('container')" type="primary">绘制最外围</Button>
+                        <Button @click="start('obstacle')" type="primary">绘制其他障碍物</Button>
                         </br>
                         </br>
-                        <Button @click="showResult()" type="primary">生成结果</Button>
-                        <Button v-clipboard="ResultStr" type="primary" @success="handleSuccess">复制结果</Button>
-
-
-                        <!-- <p>{{ imgUrl }}</p> -->
+                        <Button @click="showResult" type="primary">生成结果</Button>
+                        <Button v-clipboard:copy="ResultStr" type="primary">复制描点信息</Button>
+                        <Button v-clipboard:copy="canCrossPoints" type="primary">复制点的集合</Button>
                         </br>
                         </br>
-
                         <Button @click="showTable = !showTable">{{ showTable ? '隐藏表格': '显示表格'}}</Button>
                         <Button @click="showResultStr = !showResultStr">{{ showResultStr ? '隐藏结果文档': '显示结果文档'}}</Button>
                     </Row>
@@ -80,8 +81,11 @@
             <!-- 显示结果 -->
             <transition name="fade">
                 <div id="textarea" v-show="showResultStr">
-                    <h1>结果</h1>
+                    <h1>结果：描点信息</h1>
                     <Input v-model="ResultStr" type="textarea" :rows="4" placeholder="no result..."></Input>
+
+                    <h1>结果:可通过的点的集合</h1>
+                    <Input v-model="canCrossPoints" type="textarea" :rows="4" placeholder="no result..."></Input>
                 </div>
             </transition>
         </div>
@@ -93,12 +97,14 @@
     import tableContent from "../component/table"
     import movePoint from "../component/move"
     import Util from '../libs/util'
+    import VueImgInputer from 'vue-img-inputer'
     export default {
         components: {
             points,
             MapContent,
             tableContent,
-            movePoint
+            movePoint,
+            VueImgInputer
         },
         data() {
             return {
@@ -125,6 +131,10 @@
                   * @param { showResultStr }           显示结果文档     是否显示结果文档        
                   * @param { storeName }               商场名          当前编辑的商场名       
                   * @param { floorNum }                楼层数          当前编辑的商场楼层号 
+                  * @param { Url }                     楼层数          读取的图片地址 
+                  * @param { value8 }                  滑块数值         滑块的数值 
+                  * @param { flagNum }                 障碍物自增值     障碍物的特殊下标 
+                  * @param { canCrossPoints }          可以通过的点     可以通过的点的集合 
                   */
                 ScaleVariable: 1,
                 Drawing: false,
@@ -143,12 +153,16 @@
                 continueDrawing: false,
                 AllDatas: [],
                 ResultStr: "",
+                ResultObj: {},
                 showTable: false,
                 showResultStr: false,
-                value8: 10,
                 showConsole: true,
                 storeName: '',
-                floorNum: ''
+                floorNum: '',
+                Url: '',
+                value8: 10,
+                flagNum: 0,
+                canCrossPoints: []
             }
         },
         created: function () {
@@ -169,6 +183,16 @@
             }
         },
         methods: {
+            inputImg(file, filename) {
+                let that = this
+                var reader = new FileReader()
+                reader.onload = function () {
+                    var img = new Image();
+                    img.src = reader.result;
+                    that.Url = img.src
+                }
+                reader.readAsDataURL(file)
+            },
             // 缩放功能
             scaleAll(type) {
                 let that = this
@@ -193,6 +217,9 @@
                         alert("缩放事件出错。请刷新页面重试")
                         break
                 }
+
+                that.value8 = that.ScaleVariable * 10
+
             },
 
             // 获取鼠标点击位置
@@ -228,10 +255,14 @@
             },
 
             // 开始绘制
-            start(falg = false) {
+            start(falg = '') {
                 let that = this
-                if (falg) {
-                    that.DoorNum = 'container'
+                if (falg !== '') {
+                    that.DoorNum = falg
+                    if (falg === 'obstacle') {
+                        that.DoorNum += `${that.flagNum++}`
+                    }
+
                     that.$store.commit('set_choosedDoorId', that.DoorNum)
                     that.Drawing = true
                     that.$store.commit('set_choosed', true)
@@ -278,7 +309,7 @@
             stop() {
                 // 保存数组形式的数据，格式化。以后会将所有的数据统一这种格式，容易遍历和查找替换等。
                 let _obj = new Object()
-                if (this.DoorNum > 0) {
+                if (this.DoorNum !== -1) {
                     _obj.doorNum = this.DoorNum
                     _obj.points = this.CurrentPoints
                     _obj.polygons = this.Polygons
@@ -291,7 +322,7 @@
 
             // 删除
             deletePolygon(doorNum = '') {
-                let door = this.DoorNum > 0 ? this.DoorNum : doorNum
+                let door = doorNum === true ? this.DoorNum : doorNum
 
                 let { AllPolygons, AllPoints, AllDatas } = this.$store.state
                 for (let i in this.AllDatas) {
@@ -369,7 +400,10 @@
                             return
                         }
                         if (Util.IdExist(that.RenameNumCopy, that.$store.state.AllPolygons)) {
-                            that.$Message.warning('已经存在此id,如果必须要一样的话，请在id前加下划线并且在最后保存的时候备注，谢谢！')
+                            that.$Notice.warning({
+                                title: '已经存在此id',
+                                desc: '如果必须要一样的话，请在id前加下划线并且在最后保存的时候备注，谢谢！'
+                            })
                             return
                         }
                         this.renameWork()
@@ -422,13 +456,11 @@
                 this.DoorNum = choosedDoorId
                 this.CurrentPointIndex = _AllPolygons[choosedDoorId].length
                 this.CurrentIndex = CurrentIndex
-
                 this.continueDrawing = true
             },
 
             // 生成结果 目前生成csv文件
             showResult() {
-
                 if (this.storeName === '' || this.floorNum === '') {
                     this.$Notice.error({
                         title: '商场名和楼层号不能为空！',
@@ -436,23 +468,19 @@
                     })
                     return
                 }
-
                 let res = this.AllPolygons
                 let storeFloor = `${this.storeName}_${this.floorNum}`
-                let result = `${storeFloor}:{\n`
-
+                let result = `"${storeFloor}":{\n`
                 let str = ``
                 for (let key in res) {
                     str += `"${key}":[${res[key]}],\n`
+                    this.ResultObj[key] = res[key]
                 }
-
                 str = str.substring(0, str.length - 2)
-
                 result += str
                 result += '\n}'
-
                 this.ResultStr = result
-
+                this.canCrossPoints = Util.getCrossPoints(this.ResultObj)
                 this.showResultStr = true
                 this.showTable = true
             },
@@ -468,7 +496,6 @@
                     this.$Message.info('复制成功！')
                 }
             }
-
         }
     }
 </script>

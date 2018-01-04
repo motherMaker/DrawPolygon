@@ -13,7 +13,7 @@
       return {
         columns: [
           {
-            title: 'DoorNumber',
+            title: '门牌号',
             key: 'doorNum',
           },
           {
@@ -25,9 +25,9 @@
             key: 'polygons'
           },
           {
-            title: 'Action',
+            title: '操作',
             key: 'action',
-            width: 150,
+            width: 250,
             align: 'center',
             render: (h, params) => {
               return h('div', [
@@ -50,12 +50,26 @@
                     type: 'error',
                     size: 'small'
                   },
+                  style: {
+                    marginRight: '5px'
+                  },
                   on: {
                     click: () => {
                       this.remove(params)
                     }
                   }
-                }, '删除')
+                }, '删除'),
+                h('Button', {
+                  props: {
+                    type: 'info',
+                    size: 'small'
+                  },
+                  on: {
+                    click: () => {
+                      this.choosePlace(params)
+                    }
+                  }
+                }, '选店门')
               ]);
             }
           }
@@ -68,6 +82,9 @@
       },
       remove(params) {
         this.$emit('deleteStore', params.row.doorNum)
+      },
+      choosePlace(params) {
+        
       }
     }
   }
