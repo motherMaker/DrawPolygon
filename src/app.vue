@@ -156,6 +156,10 @@
     width: 100%;
   }
 
+  #textarea h1 {
+    padding: 10px;
+  }
+
 
   /* 控制按钮 */
 
@@ -163,7 +167,7 @@
     position: fixed;
     top: 10px;
     left: 10px;
-    z-index: 200;
+    z-index: 20000;
   }
 
   #floatConsole .transformConsole {

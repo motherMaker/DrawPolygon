@@ -1,5 +1,5 @@
 <template>
-  <Table border :columns="columns" :data="datas"></Table>
+  <Table border height="200" :columns="columns" :data="datas"></Table>
 </template>
 <script>
   export default {

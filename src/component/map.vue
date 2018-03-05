@@ -63,8 +63,9 @@
         this.$emit('setDarwing')
       },
       pushing(doorNum, points) {
-        this.$set(this.DoorNumArr, this.index, doorNum)
-        this.$set(this.PointsArr, this.index, points)
+        let index = this.$store.state.CurrentIndex
+        this.$set(this.DoorNumArr, index, doorNum)
+        this.$set(this.PointsArr, index, points)
       },
 
       deletePoly(door) {

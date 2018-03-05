@@ -1,26 +1,14 @@
 <template>
     <div class="index">
         <div id="sectionFloat">
-            <!-- <img v-if="Url" :src="Url" alt="测试图" id="img" :style="{ transform: scaleStyle }">
-            <VueImgInputer theme="light" size="large" @onChange="inputImg" v-if="!Url"></VueImgInputer> -->
+            <img v-if="Url" :src="Url" alt="测试图" id="img" :style="{ transform: scaleStyle }">
+            <VueImgInputer theme="light" size="large" @onChange="inputImg" v-if="!Url"></VueImgInputer>
 
-            <img src="../resource/jb_2f.jpg" alt="测试图" id="img" :style="{ transform: scaleStyle }">
+            <!-- <img src="../resource/jb_2f.jpg" alt="测试图" id="img" :style="{ transform: scaleStyle }"> -->
             <!-- 控制台 -->
             <div id="floatConsole">
                 <transition name="fade">
                     <Row class="scale colorful-stripe" v-if="showConsole">
-                        <Row class="storeName">
-                            <Col span="14">
-                            <Input v-model="storeName">
-                            <span slot="prepend">商场名：</span>
-                            </Input>
-                            </Col>
-                            <Col span="10">
-                            <Input v-model="floorNum">
-                            <span slot="prepend">楼层号：</span>
-                            </Input>
-                            </Col>
-                        </Row>
                         <Button @click="scaleAll('add')" id="addImg" type="primary">放大图片</Button>
                         <Button @click="scaleAll('reduce')" id="reduceImg" type="primary">缩小图片</Button>
                         <Slider v-model="value8" :min=4 :max=40 :step=1 :tip-format="formatTip" @on-input="consoleInput"></Slider>
@@ -39,19 +27,13 @@
                         <Button @click="start('obstacle')" type="primary">绘制其他障碍物</Button>
                         </br>
                         </br>
-                        <Button @click="showResult" type="primary">生成结果</Button>
-                        <Button v-clipboard:copy="ResultStr" type="primary">复制描点信息</Button>
-                        <Button v-clipboard:copy="canCrossPoints" type="primary">复制点的集合</Button>
+                        <Button @click="showResult" type="primary" :disabled="Drawing">生成结果</Button>
                         </br>
                         </br>
                         <Button @click="showTable = !showTable">{{ showTable ? '隐藏表格': '显示表格'}}</Button>
                         <Button @click="showResultStr = !showResultStr">{{ showResultStr ? '隐藏结果文档': '显示结果文档'}}</Button>
                     </Row>
                 </transition>
-
-                <Row class="transformConsole">
-                    <Button type="text" icon="arrow-shrink" @click="showConsole=!showConsole" size="large"></Button>
-                </Row>
             </div>
 
             <!-- 点的集合 -->
@@ -81,10 +63,16 @@
             <!-- 显示结果 -->
             <transition name="fade">
                 <div id="textarea" v-show="showResultStr">
-                    <h1>结果：描点信息</h1>
+                    <h1>
+                        结果：描点信息
+                        <Button v-clipboard:copy="ResultStr" type="primary">复制描点信息</Button>
+                    </h1>
                     <Input v-model="ResultStr" type="textarea" :rows="4" placeholder="no result..."></Input>
 
-                    <h1>结果:可通过的点的集合</h1>
+                    <h1>
+                        结果:可通过的点的集合
+                        <Button v-clipboard:copy="canCrossPoints" type="primary">复制点的集合</Button>
+                    </h1>
                     <Input v-model="canCrossPoints" type="textarea" :rows="4" placeholder="no result..."></Input>
                 </div>
             </transition>
@@ -129,8 +117,6 @@
                   * @param { ResultStr }               结果字符串       最后生成的结果的字符串        
                   * @param { showTable }               显示表格         是否显示表格        
                   * @param { showResultStr }           显示结果文档     是否显示结果文档        
-                  * @param { storeName }               商场名          当前编辑的商场名       
-                  * @param { floorNum }                楼层数          当前编辑的商场楼层号 
                   * @param { Url }                     楼层数          读取的图片地址 
                   * @param { value8 }                  滑块数值         滑块的数值 
                   * @param { flagNum }                 障碍物自增值     障碍物的特殊下标 
@@ -157,15 +143,38 @@
                 showTable: false,
                 showResultStr: false,
                 showConsole: true,
-                storeName: '',
-                floorNum: '',
                 Url: '',
                 value8: 10,
                 flagNum: 0,
                 canCrossPoints: []
             }
         },
-        created: function () {
+        mounted: function () {
+            let that = this
+            let { Url } = this.$route.query
+            this.Url = Url
+            if (Util.isEmptyObj(stores_tracing)) {
+                return
+            }
+            let _obj = stores_tracing
+            for (let key in _obj) {
+                let _points = _obj[key]
+                this.DoorNum = key
+                that.Drawing = true
+                that.$store.commit('set_choosed', true)
+                that.$store.commit('set_choosedDoorId', that.DoorNum)
+
+                for (let j = 0; j < _points.length; j = j + 2) {
+                    this.getClickPos({
+                        'offsetX': _points[j],
+                        'offsetY': _points[j + 1]
+                    })
+                }
+                this.stop()
+            }
+            // 主动设置table高度。目前还没解决iview的table不自适应
+            document.getElementsByClassName('ivu-table-wrapper')[0].style.height = '240px'
+
         },
         computed: {
             scaleStyle: function () {
@@ -231,7 +240,6 @@
                 if (offsetX == 0 && offsetY == 0) {
                     this.$Message.danger("2个点重合了，请重描")
                 }
-                // this.Polygons.push(offsetX, offsetY)
 
                 this.$set(this.Polygons, this.CurrentPointIndex, offsetX)
                 this.$set(this.Polygons, this.CurrentPointIndex + 1, offsetY)
@@ -323,7 +331,6 @@
             // 删除
             deletePolygon(doorNum = '') {
                 let door = doorNum === true ? this.DoorNum : doorNum
-
                 let { AllPolygons, AllPoints, AllDatas } = this.$store.state
                 for (let i in this.AllDatas) {
                     if (this.AllDatas[i].doorNum == door) {
@@ -338,13 +345,13 @@
                 this.$store.commit('set_tableDatas', this.AllDatas)
                 this.$store.commit('set_AllPolygons', this.AllPolygons)
                 this.$store.commit('set_AllPoints', this.AllPoints)
-
                 this.endDrawing()
             },
 
             // 点击完成绘制之后的操作
             endDrawing() {
                 this.CurrentIndex += 1
+                this.$store.commit('set_CurrentIndex', this.CurrentIndex)
                 this.CurrentPoints = []
                 this.Polygons = []
                 this.DoorNum = -1
@@ -391,7 +398,7 @@
                 this.$Modal.confirm({
                     onCancel: () => {
                         that.$Message.warning("取消重命名！")
-                        that.stop()
+                        that.endDrawing()
                         return
                     },
                     onOk: () => {
@@ -459,28 +466,28 @@
                 this.continueDrawing = true
             },
 
-            // 生成结果 目前生成csv文件
+            // 生成结果 
             showResult() {
-                if (this.storeName === '' || this.floorNum === '') {
+                if (Util.isEmptyObj(this.AllPolygons)) {
                     this.$Notice.error({
-                        title: '商场名和楼层号不能为空！',
-                        desc: ''
+                        title: '还没描哪来的结果！'
                     })
                     return
                 }
                 let res = this.AllPolygons
-                let storeFloor = `${this.storeName}_${this.floorNum}`
-                let result = `"${storeFloor}":{\n`
+                let result = `{\n`
                 let str = ``
                 for (let key in res) {
+                    if (key == 'container' || key.indexOf('obstacle') > -1) {
+                        continue
+                    }
                     str += `"${key}":[${res[key]}],\n`
-                    this.ResultObj[key] = res[key]
                 }
                 str = str.substring(0, str.length - 2)
                 result += str
                 result += '\n}'
                 this.ResultStr = result
-                this.canCrossPoints = Util.getCrossPoints(this.ResultObj)
+                this.canCrossPoints = Util.getCrossPoints(res)
                 this.showResultStr = true
                 this.showTable = true
             },
